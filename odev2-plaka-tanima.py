@@ -1,21 +1,16 @@
 class TuringMakinesi:
     def __init__(self, plaka):
-        # Bant yapısı: Girdi sonuna boşluk sembolü ekliyoruz (Örn: '_')
         self.bant = list(plaka) + ['B']
         self.kafa = 0
 
-        # Durumlar (Sizin görselinizdeki adlandırmalara uygun)
         self.durum = 'q0'
         self.kabul = 'qKABUL'
         self.red = 'qRED'   # qRED durumu 
         self.adim = 1
 
-        # Alfabeler
         self.rakamlar = "0123456789"
         self.harfler = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-        # Geçiş fonksiyonunu oluştur
-        self.gecisler = self.gecis_fonk()
+        self.gecisler = self.gecis_fonk() #geçiş fonksiyonu oluştur
 
     def gecis_fonk(self):
         gecis = {}
