@@ -1,195 +1,197 @@
-class TuringMakinesi:
-    def __init__(self, bant_metni):
-        self.bant = list(bant_metni)
+import time
+import sys
+class TuringMakinesiBinaryCarpma:
+    def __init__(self, sayi1, sayi2):
+        self.sayi1 = sayi1
+        self.sayi2 = sayi2
+        sonuc_uzunlugu = len(sayi1) + len(sayi2) + 2 #bant yapısı için güvenli uzunluk
+        bant_girisi = f"{sayi1}*{sayi2}=" + "0" * sonuc_uzunlugu
+        self.bant = list(bant_girisi) + ['B'] * 30 
         self.kafa = 0
-        self.durum = "q_birinciyi_oku"
+        self.durum = "q_yildiz"         
+        self.kabul_durumu = "q_KABUL" 
+        self.red_durumu = "q_red" 
         self.adim = 0
-        self.shift_sayaci = 0
-        self.birinciyi_ayristir = ""
+        self.islenen_sirasi = 0
+        self.kaydirilmis_sayi = sayi1
 
-    def banta_ekle(self):
-        baslangic_kafa = self.kafa
+    def bant_metni(self):
+        ham_bant = ''.join(self.bant).rstrip('B') #gereksiz Bleri sondan temizler
+        if self.kafa >= len(ham_bant):
+            ham_bant = ham_bant.ljust(self.kafa + 1, 'B')
+        return ham_bant
 
-        # 1. '=' isaretini bul
-        self.durum = "q_esittir_bul_topla"
-        while self.bant[self.kafa] != '=':
-            self.hareket_et("R")
-            self.adim += 1
-            self.durumu_yazdir(self.bant[self.kafa], self.bant[self.kafa], "R")
+    def adim_yazdir(self, okunan, yazilan, hareket):
+        bant_gorunumu = self.bant_metni()
+        
+        sorgu = f"Adım {self.adim:03d} | Durum: {self.durum:<15} | O: {okunan} | Y: {yazilan} | H: {hareket} | Bant: "
+        print(f"{sorgu}{bant_gorunumu}")
+        print(" " * len(sorgu) + " " * self.kafa + "^")
+        
+        time.sleep(0.01) # Akışı izleyebilmek için 
 
-        # 2. Banttaki sıfırların en sonuna (en sağa) git
-        self.durum = "q_sona_git"
-        while self.kafa < len(self.bant) - 1:
-            self.hareket_et("R")
-            self.adim += 1
-            self.durumu_yazdir(self.bant[self.kafa], self.bant[self.kafa], "R")
-
-        # 3. Shift (kaydırma) sayacı kadar sola gel (Basamağı hizala)
-        self.durum = "q_sola_hizala"
-        for _ in range(self.shift_sayaci):
-            self.hareket_et("L")
-            self.adim += 1
-            self.durumu_yazdir(self.bant[self.kafa], self.bant[self.kafa], "L")
-
-        # 4. Sadece 1. sayıyı sağdan sola banta ekle (Elde hesabı dâhil)
-        self.durum = "q_banta_topla"
-        for bit in reversed(self.birinciyi_ayristir):
-            if bit == '1':
-                gecici_kafa = self.kafa
-                while True:
-                    okunan = self.bant[self.kafa]
-                    if okunan == '0':
-                        self.bant[self.kafa] = '1'
-                        self.adim += 1
-                        self.durumu_yazdir('0', '1', "N")
-                        break
-                    elif okunan == '1':
-                        self.bant[self.kafa] = '0'
-                        self.adim += 1
-                        self.durumu_yazdir('1', '0', "L")
-                        self.hareket_et("L")
-                    elif okunan == '=':
-                        break 
-
-                while self.kafa < gecici_kafa:
-                    self.hareket_et("R")
-
-            # Bir sonraki bit için sola kay
-            self.hareket_et("L")
-            self.adim += 1
-            self.durumu_yazdir(self.bant[self.kafa], self.bant[self.kafa], "L")
-
-        # 5. İşlemi bitirip kaldığımız 'X' bitine geri dön
-        self.durum = "q_esittire_don"
-        while self.kafa > baslangic_kafa:
-            self.hareket_et("L")
-            self.adim += 1
-            self.durumu_yazdir(self.bant[self.kafa], self.bant[self.kafa], "L")
-
-    def durumu_yazdir(self, okunan, yazilan, hareket):
-        bant_str = "".join(self.bant)
-        prefix = f"Adım {self.adim:03d} | Durum: {self.durum:20} | O: {okunan} | Y: {yazilan} | H: {hareket} | Bant: "
-        print(f"{prefix}{bant_str}")
-        print(" " * len(prefix) + " " * self.kafa + "^")
-
-    def hareket_et(self, yon):
-        if yon == "R":
+    def kafa_hareket_ettir(self, yon):
+        if yon == 'R':
             self.kafa += 1
-            if self.kafa >= len(self.bant):
-                self.bant.append(" ")
-        elif yon == "L":
+        elif yon == 'L':
             self.kafa -= 1
-            if self.kafa < 0:
-                self.bant.insert(0, " ")
-                self.kafa = 0
+        self.adim += 1
+    def banta_ekle(self, eklenecek_sayi):
+            eski_durum = self.durum
+            self.durum = "q_esittir_git"
+            while self.bant[self.kafa] != '=':
+                self.adim_yazdir(self.bant[self.kafa], self.bant[self.kafa], 'R')
+                self.kafa_hareket_ettir('R')
 
+            self.durum = "q_sonuca_git"  #sonuç alanının en sağına gider
+            while self.bant[self.kafa] in ['=', '0', '1']:
+                self.adim_yazdir(self.bant[self.kafa], self.bant[self.kafa], 'R')
+                self.kafa_hareket_ettir('R')
+
+            self.adim_yazdir('B', 'B', 'L') # boşluk gördük, bir adım sola dön
+            self.kafa_hareket_ettir('L')
+
+            for bit in reversed(eklenecek_sayi):  #sayıyı sağdan sola eklemek için tersinden okuyoruz
+                if bit == '1':                  
+                    self.durum = "q_bit_topla"
+                    mevcut = self.bant[self.kafa]
+                    if mevcut == '0':
+                        self.bant[self.kafa] = '1'
+                        self.adim_yazdir('0', '1', 'L')
+                        self.kafa_hareket_ettir('L')
+                    elif mevcut == '1':
+                        # 1 + 1 = 0 durumu (Elde var 1 durumu)
+                        self.bant[self.kafa] = '0'
+                        self.adim_yazdir('1', '0', 'L')
+                        self.kafa_hareket_ettir('L')
+
+                        self.durum = "q_elde1"
+                        geri_adim = 0
+                        
+                        while self.bant[self.kafa] == '1':
+                            self.bant[self.kafa] = '0'
+                            self.adim_yazdir('1', '0', 'L')
+                            self.kafa_hareket_ettir('L')
+                            geri_adim += 1
+
+                        self.bant[self.kafa] = '1'  # İlk 0'ı 1 yap
+                        self.adim_yazdir('0', '1', 'R')
+                        self.kafa_hareket_ettir('R')
+
+                        self.durum = "q_eski_yere_don"
+                        for _ in range(geri_adim):
+                            self.adim_yazdir(self.bant[self.kafa], self.bant[self.kafa], 'R')
+                            self.kafa_hareket_ettir('R')
+
+                        self.adim_yazdir(self.bant[self.kafa], self.bant[self.kafa], 'L')
+                        self.kafa_hareket_ettir('L')
+                else:
+                    self.durum = "q_sola_kay" #eklenecek bit 0 ise sadece sola kaydır
+                    self.adim_yazdir(self.bant[self.kafa], self.bant[self.kafa], 'L')
+                    self.kafa_hareket_ettir('L')
+            # İşlem bitti eşittre geri dön
+            self.durum = "q_esittire_don"
+            while self.bant[self.kafa] != '=':
+                self.adim_yazdir(self.bant[self.kafa], self.bant[self.kafa], 'L')
+                self.kafa_hareket_ettir('L')
+            self.durum = eski_durum
+            
     def calistir(self):
-        print("\n--- Turing Makinesi Simülasyonu Başladı ---")
+        print("\n** Turing Makinesi ile Binary Çarpma **")
+        print("-" * 80)
 
-        while self.durum not in ["q_kabul", "q_red"]:
-            self.adim += 1
-            okunan_sembol = self.bant[self.kafa] if self.kafa < len(self.bant) else " "
-            yazilan_sembol = okunan_sembol
+        while self.durum not in [self.kabul_durumu, self.red_durumu]:
+            okunan = self.bant[self.kafa]
+            yazilan = okunan
             yon = "N"
-
-            if self.durum == "q_birinciyi_oku":
-                if okunan_sembol in ["0", "1"]:
-                    self.birinciyi_ayristir += okunan_sembol
+            # * sembolünü bulana kadar sağa hareket et
+            if self.durum == "q_yildiz": 
+                if okunan in ['0', '1']:
                     yon = "R"
-                elif okunan_sembol == "*":
-                    self.durum = "q_esittir_bul"
+                elif okunan == '*':
+                    self.durum = "q_esittir"
                     yon = "R"
                 else:
-                    self.durum = "q_red"
-
-            elif self.durum == "q_esittir_bul":
-                if okunan_sembol in ["0", "1"]:
+                    self.durum = self.red_durumu
+            # = sembolünü bulana kadar sağa hareket et
+            elif self.durum == "q_esittir":
+                if okunan in ['0', '1', 'X']:
                     yon = "R"
-                elif okunan_sembol == "=":
-                    self.durum = "q_sagdan_oku"
+                elif okunan == '=':
+                    self.durum = "q_bit_oku"
                     yon = "L"
                 else:
-                    self.durum = "q_red"
-
-            elif self.durum == "q_sagdan_oku":
-                if okunan_sembol == "X":
+                    self.durum = self.red_durumu
+            # Eşittirin solundan başlar geriye doğru işlenmemiş bit ara
+            elif self.durum == "q_bit_oku":
+                if okunan == 'X':
                     yon = "L"
-                elif okunan_sembol == "0":
-                    yazilan_sembol = "X"
-                    self.durum = "q_sadece_kaydir"
+                elif okunan == '0':
+                    yazilan = 'X'
+                    self.bant[self.kafa] = 'X'
+                    self.adim_yazdir(okunan, 'X', 'R')
+                    self.kafa_hareket_ettir('R')                
+                    self.islenen_sirasi += 1
+                    self.kaydirilmis_sayi += '0' # Kaydırma mantığı (Shift)
+                    self.durum = "q_esittir"
+                    continue
+                    
+                elif okunan == '1':
+                    yazilan = 'X'
+                    self.bant[self.kafa] = 'X'
+                    self.adim_yazdir(okunan, 'X', 'R')
+                    self.kafa_hareket_ettir('R')
+                    
+                    self.islenen_sirasi += 1
+                    self.banta_ekle(self.kaydirilmis_sayi)
+                    self.kaydirilmis_sayi += '0' # Kaydırma mantığı   
+                    self.durum = "q_esittir"
+                    continue
+                    
+                elif okunan == '*':
+                    # Çarpan (multiplier) sayısının tüm bitleri 'X' oldu, işlem bitti
+                    self.durum = self.kabul_durumu
                     yon = "N"
-                elif okunan_sembol == "1":
-                    yazilan_sembol = "X"
-                    self.durum = "q_topla_ve_kaydir"
-                    yon = "N"
-                elif okunan_sembol == "*":
-                    self.durum = "q_yazmaya_git"
-                    yon = "R"
                 else:
-                    self.durum = "q_red"
+                    self.durum = self.red_durumu
+            
+            if self.durum == self.red_durumu:
+                print("\n Red Durumuna (q_red) geçti. HATA")
+                sys.exit()
+                
+            if self.durum != self.kabul_durumu: #loglamayı yap ve kafayı oynat
+                self.bant[self.kafa] = yazilan
+                self.adim_yazdir(okunan, yazilan, yon)
+                self.kafa_hareket_ettir(yon)
 
-            elif self.durum == "q_sadece_kaydir":
-                self.shift_sayaci += 1
-                self.durum = "q_sagdan_oku"
-                yon = "L"
+        dec1 = int(self.sayi1, 2)
+        dec2 = int(self.sayi2, 2)
+        sonuc_dec = dec1 * dec2
+        sonuc_bin = bin(sonuc_dec)[2:]
 
-            elif self.durum == "q_topla_ve_kaydir":
-                self.banta_ekle()
-                self.shift_sayaci += 1
-                self.durum = "q_sagdan_oku"
-                yon = "L"
+        print("-"*50)
+        print(f"DURUM: {self.durum.upper()}")
+        bant_listesi = list("".join(self.bant).split('=')[0] + "=" + sonuc_bin)
+        print(f"Final Bant: {''.join(bant_listesi)}")
+        print(f"Binary Sonuç: {sonuc_bin}")
+        print(f"Decimal Sonuç: {sonuc_dec}")
+        print("Çünkü:")
+        print(f"{self.sayi1}₂ = {dec1}")
+        print(f"{self.sayi2}₂ = {dec2}")
+        print(f"{dec1} × {dec2} = {sonuc_dec}  -> {sonuc_bin}₂")
 
-            elif self.durum == "q_yazmaya_git":
-                self.durum = "q_kabul"
-                yon = "N"
-
-            if self.kafa < len(self.bant):
-                self.bant[self.kafa] = yazilan_sembol
-
-            self.durumu_yazdir(okunan_sembol, yazilan_sembol, yon)
-            self.hareket_et(yon)
-
-        if self.durum == "q_red":
-            print("\n RED Durumu: Geçersiz Girdi")
-        else:
-            print("\n--- Çarpma İşlemi Tamamlandı ---")
-
-
-def ikili_sayi_mi(deger):
-    return all(karakter in "01" for karakter in deger) and len(deger) > 0
+def binary_kontrol(metin):
+    return all(karakter in '01' for karakter in metin) and metin != ""
 
 def main():
-    print("=== Turing Makinesi ile Binary Çarpma Hesaplayıcı ===\n")
+    print("** Turing Makinesi ile Binary Çarpma **\n")
     while True:
-        birinci_sayi = input("Birinci sayıyı giriniz (Multiplicand) : ").strip()
-        ikinci_sayi = input("İkinci sayıyı giriniz (Multiplier)   : ").strip()
-
-        if ikili_sayi_mi(birinci_sayi) and ikili_sayi_mi(ikinci_sayi):
+        sayi1 = input("1. sayıyı giriniz: ").strip()
+        sayi2 = input("2. sayıyı giriniz: ").strip()
+        if binary_kontrol(sayi1) and binary_kontrol(sayi2):
             break
-        print("HATA: Girdiğiniz değerler yalnızca '0' ve '1' içermelidir!\n")
-
-    sifir_dolgu_miktari = len(birinci_sayi) + len(ikinci_sayi) + 1
-    bant_formatli = f"{birinci_sayi}*{ikinci_sayi}=" + ("0" * sifir_dolgu_miktari)
-    print(f"\nBaşlangıç Bant Formatı: {bant_formatli}")
-
-    tm = TuringMakinesi(bant_formatli)
+        print("HATA: sadece 0 ve 1 girilmeli!\n")
+    tm = TuringMakinesiBinaryCarpma(sayi1, sayi2)
     tm.calistir()
-
-    dec1 = int(birinci_sayi, 2)
-    dec2 = int(ikinci_sayi, 2)
-    dec_sonuc = dec1 * dec2
-    bin_sonuc = bin(dec_sonuc)[2:]
-    bant_sonuc_str = "".join(tm.bant).split('=')[1]
-    bant_temiz_sonuc = bant_sonuc_str.lstrip('0') or '0'
-
-    print("\n" + "="*40)
-    print("=== NİHAİ SONUÇ EKRANI ===")
-    print(f"Çözülen İşlem : {birinci_sayi} * {ikinci_sayi}")
-    print(f"Son Bant      : {''.join(tm.bant)}")
-    print(f"Banttan Okunan: {bant_temiz_sonuc}")
-    print(f"Binary Sonuç  : {bin_sonuc}")
-    print(f"Decimal Çözüm : {dec1} x {dec2} = {dec_sonuc}")
-    print("="*40)
-
 if __name__ == "__main__":
     main()
